@@ -60,3 +60,9 @@ split-on-trailing-comma = false
 [tool.ruff.lint.mccabe]
 max-complexity = 12
 
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.15.20",
+]
+
