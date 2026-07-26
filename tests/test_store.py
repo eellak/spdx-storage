@@ -16,10 +16,10 @@ def test_spdx_store_import_file_returns_import_result():
     result = store.import_file(str(EXAMPLE_FILE))
 
     assert result.source() == str(EXAMPLE_FILE)
-    assert result.input_format() is None
+    assert result.input_format() == "json-ld"
     assert result.output_format() == "turtle"
     assert result.count() > 0
-    assert result.graph() is None
+    assert result.graph_uri() is None
     assert isinstance(result.data(), str)
 
     graph = Graph()
