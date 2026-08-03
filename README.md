@@ -41,23 +41,10 @@ Or, using [uv](https://docs.astral.sh/uv/):
 uv add spdx-storage
 ```
 
-## Quick start
+## Command-line interface
 
-The API below is illustrative and will be refined as the library is implemented.
-
-```python
-from spdx_storage import SPDXStore
-
-# Open (or create) a graph-backed store using a connection string.
-with SPDXStore.connect("jena", {"graph": "http://localhost/jena"} ) as store:
-    # Import SPDX data from a file into the graph store.
-    store.import_file("example.spdx.json")
-
-    # ... query, traverse, or merge documents in the store ...
-
-    # Export the stored data back out to an SPDX serialization.
-    store.export_file("export.spdx.json", format="json-ld")
-```
+The different command-line interface options are documented
+in the [description document](./description.md).
 
 ## Supported backends
 
@@ -94,6 +81,7 @@ uv run ruff format .
 
 ## Roadmap
 
+- [x] Command-line interface
 - [ ] Core SPDX graph model and storage interface
 - [ ] Import from standard SPDX serializations
 - [ ] Export to standard SPDX serializations
@@ -102,7 +90,7 @@ uv run ruff format .
 ## License
 
 This project is licensed under the **Apache License 2.0**.
-See the [LICENSE](LICENSE) file for the full text.
+See the [LICENSE](./LICENSE) file for the full text.
 
 Note that this repository may include content developed with support
 from one or more generative artificial intelligence solutions.
