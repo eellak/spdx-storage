@@ -44,7 +44,7 @@ uv add spdx-storage
 ## Command-line interface
 
 The different command-line interface options are documented
-in the [description document](./description.md).
+in the [description document](./docs/description.md).
 
 ## Supported backends
 
