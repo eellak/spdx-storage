@@ -12,6 +12,14 @@ import platformdirs
 
 DEFAULT_CONFIG_FILENAME = "config.toml"
 
+ALLOWED_CONFIG_KEYS = {
+    "backend",
+    "name",
+    "graph",
+    "conn_url",
+    "auth",
+}
+
 
 def get_default_config_file() -> Path:
     config_dir = Path(platformdirs.user_config_path("spdx-storage", "spdx-storage"))
@@ -35,10 +43,33 @@ class ConfigManager:
         self._data = {str(key): str(value) for key, value in raw_data.items()}
 
     def get(self, key: str) -> str | None:
-        return self._data.get(key)
+        if key in ALLOWED_CONFIG_KEYS:
+            return self._data.get(key)
+        msg = (
+            f"Invalid configuration key: {key}\n"
+            "Available configuration keys are:\n"
+            "backend: Specifies the backend to be used for storage (e.g., sqlite, postgresql, etc.).\n"
+            "name: Specifies the name of the repository/dataset.\n"
+            "graph: Specifies the name of the graph inside the database.\n"
+            "conn_url: Specifies the URL of the database connection.\n"
+            "auth: Specifies the authentication payload to be used for the database connection."
+        )
+        raise ValueError(msg)
 
     def set(self, key: str, value: str) -> None:
-        self._data[key] = value
+        if key in ALLOWED_CONFIG_KEYS:
+            self._data[key] = value
+        else:
+            msg = (
+                f"Invalid configuration key: {key}\n"
+                "Available configuration keys are:\n"
+                "backend: Specifies the backend to be used for storage (e.g., sqlite, postgresql, etc.).\n"
+                "name: Specifies the name of the repository/dataset.\n"
+                "graph: Specifies the name of the graph inside the database.\n"
+                "conn_url: Specifies the URL of the database connection.\n"
+                "auth: Specifies the authentication payload to be used for the database connection."
+            )
+            raise ValueError(msg)
 
     def items(self) -> tuple[tuple[str, str], ...]:
         return tuple(sorted(self._data.items()))
