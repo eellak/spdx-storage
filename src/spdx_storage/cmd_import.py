@@ -30,36 +30,36 @@ def do_import(input_file: str, config_file: str | None = None) -> int:
         msg = f"Input file does not exist or is not a file: {input_file}"
         raise FileNotFoundError(msg)
 
-    # Resolve and Validate configuration needed for storage from config file
+    # Resolve and validate configuration file
     config_path = _resolve_config_path(config_file=config_file)
     if config_file is not None and not config_path.is_file():
         msg = f"Configuration file does not exist or is not a file: {config_file}"
         raise FileNotFoundError(msg)
 
-    manager = ConfigManager(config_path)
-    backend = manager.get("backend")
-    name = manager.get("name")
-    graph = manager.get("graph")
-    conn_url = manager.get("conn_url")
-    auth = manager.get("auth")
-
     # Read/parse the SPDX input file into RDF data
     input_format = detect_format(input_path)
     data_graph = Graph()
-    data_graph.parse(input_path, format=input_format)
+    try:
+        data_graph.parse(input_path, format=input_format)
+    except (ValueError, OSError) as exc:
+        msg = f"Failed to parse SPDX input file: {input_file}"
+        raise ValueError(msg) from exc
 
     # Initialize a triplestore instance and import the RDF data
-    triplestore_config = {}
-    if name is not None:
-        triplestore_config["name"] = name
-    if graph is not None:
-        triplestore_config["graph"] = graph
-    if conn_url is not None:
-        triplestore_config["base_url"] = conn_url
-    if auth is not None:
-        triplestore_config["auth"] = auth
+    manager = ConfigManager(config_path)
 
-    store = Triplestore(backend, config=triplestore_config)
+    triplestore_config = {}
+    for config_key, store_key in (
+        ("name", "name"),
+        ("graph", "graph"),
+        ("conn_url", "base_url"),
+        ("auth", "auth"),
+    ):
+        value = manager.get(config_key)
+        if value is not None:
+            triplestore_config[store_key] = value
+
+    store = Triplestore(manager.get("backend"), config=triplestore_config)
     store.add_all(data_graph)
 
     return 0
