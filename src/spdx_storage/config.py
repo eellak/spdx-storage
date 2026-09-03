@@ -1,5 +1,5 @@
 """Configuration file handling for spdx-storage."""
-# Copyright (c) 2026 Alexios Zavras
+# Copyright (c) 2026 Alexios Zavras, Maira Papadopoulou
 # SPDX-License-Identifier: Apache-2.0
 
 from __future__ import annotations
