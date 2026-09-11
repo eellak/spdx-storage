@@ -13,7 +13,7 @@ Each command comes with a set of options and parameters that can be customized t
 ## `config`
 
 ```sh
-spdx-storage config [OPTIONS] SUBCOMMAND [ARGS]...
+spdx-storage [OPTIONS] config SUBCOMMAND [ARGS]...
 ```
 
 This command is modeled after the `git config` command and is used to manage configuration settings for the utility.
@@ -37,6 +37,7 @@ The available subcommands are:
 The available configuration keys are:
 
 * `backend`: specifies the backend to be used for storage (e.g., `sqlite`, `postgresql`, etc.).
+* `name`: specifies the backend-specific name of the storage instance, repository, or dataset.
 * `graph`: specifies the name of the graph inside the database, allowing for disjoint graphs.
 * `conn_url`: specifies the URL of the database connection.
 * `auth`: specifies the authentication payload to be used for the database connection.
@@ -46,7 +47,7 @@ Not all keys are meaningful for all backends, and some backends may require addi
 ## `import`
 
 ```sh
-spdx-storage import [OPTIONS] <input_file>
+spdx-storage [OPTIONS] import <input_file>
 ```
 
 This command is used to save (import) SPDX data from an external file into the storage system.
@@ -59,7 +60,7 @@ and the utility will parse the data and store it in the specified backend.
 ## `import-sbom`
 
 ```sh
-spdx-storage import-sbom [OPTIONS] <input_file>
+spdx-storage [OPTIONS] import-sbom <input_file>
 ```
 
 This command is used to save (import) an SPDX SBOM from an external file into the storage system.
@@ -76,7 +77,7 @@ Other available options include:
 ## `export`
 
 ```sh
-spdx-storage export [OPTIONS] <id>
+spdx-storage [OPTIONS] export <id>
 ```
 
 This command is used to export SPDX data from the storage system.
