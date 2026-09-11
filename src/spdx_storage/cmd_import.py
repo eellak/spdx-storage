@@ -1,5 +1,6 @@
 """`import` command implementation for spdx-storage."""
-# Copyright (c) 2026 Alexios Zavras, Maira Papadopoulou
+# Copyright (c) 2026 Alexios Zavras
+# Copyright (c) 2026 Maira Papadopoulou
 # SPDX-License-Identifier: Apache-2.0
 
 from __future__ import annotations
@@ -46,20 +47,15 @@ def do_import(input_file: str, config_file: str | None = None) -> int:
         raise ValueError(msg) from exc
 
     # Initialize a triplestore instance and import the RDF data
-    manager = ConfigManager(config_path)
+    config = ConfigManager(config_path)
 
     triplestore_config = {}
-    for config_key, store_key in (
-        ("name", "name"),
-        ("graph", "graph"),
-        ("conn_url", "base_url"),
-        ("auth", "auth"),
-    ):
-        value = manager.get(config_key)
+    for config_key in ("name", "graph", "conn_url", "auth"):
+        value = config.get(config_key)
         if value is not None:
-            triplestore_config[store_key] = value
+            triplestore_config[config_key] = value
 
-    store = Triplestore(manager.get("backend"), config=triplestore_config)
+    store = Triplestore(config.get("backend"), config=triplestore_config)
     store.add_all(data_graph)
 
     return 0
@@ -70,20 +66,19 @@ def handle_import_command(args: argparse.Namespace) -> int:
 
 
 def detect_format(path: Path) -> str:
-    suffixes = [suffix.lower() for suffix in path.suffixes]
+    suffix = path.suffix.lower()
 
-    if suffixes[-1:] == [".jsonld"] or suffixes[-2:] in [[".spdx", ".json"], [".spdx3", ".json"]]:
+    if suffix in {".json", ".jsonld", ".json-ld"}:
         return "json-ld"
 
-    # Let's start only with json-ld firstly
-    # if path.suffix in {".ttl", ".turtle"}:
-    #     return "turtle"
+    if suffix in {".ttl", ".turtle"}:
+        return "turtle"
 
-    # if path.suffix == ".nt":
-    #     return "nt"
+    if suffix == ".nt":
+        return "nt"
 
-    # if path.suffix in {".rdf", ".xml"}:
-    #     return "xml"
+    if suffix in {".rdf", ".xml"}:
+        return "xml"
 
     msg = f"Unsupported input format: {path.suffix}"
     raise ValueError(msg)

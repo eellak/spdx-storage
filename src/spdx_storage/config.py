@@ -6,19 +6,13 @@ from __future__ import annotations
 
 import json
 import tomllib
+import warnings
 from pathlib import Path
+from typing import ClassVar
 
 import platformdirs
 
 DEFAULT_CONFIG_FILENAME = "config.toml"
-
-ALLOWED_CONFIG_KEYS = {
-    "backend",
-    "name",
-    "graph",
-    "conn_url",
-    "auth",
-}
 
 
 def get_default_config_file() -> Path:
@@ -27,6 +21,9 @@ def get_default_config_file() -> Path:
 
 
 class ConfigManager:
+    KNOWN_CONFIG_KEYS: ClassVar[set[str]] = {"auth", "backend", "conn_url", "graph", "name"}
+    ALIASES: ClassVar[dict[str, str]] = {"conn_url": "base_url"}
+
     def __init__(self, path: Path | None = None) -> None:
         self.path = Path(path) if path is not None else get_default_config_file()
         self._data: dict[str, str] = {}
@@ -43,33 +40,14 @@ class ConfigManager:
         self._data = {str(key): str(value) for key, value in raw_data.items()}
 
     def get(self, key: str) -> str | None:
-        if key in ALLOWED_CONFIG_KEYS:
-            return self._data.get(key)
-        msg = (
-            f"Invalid configuration key: {key}\n"
-            "Available configuration keys are:\n"
-            "backend: Specifies the backend to be used for storage (e.g., sqlite, postgresql, etc.).\n"
-            "name: Specifies the name of the repository/dataset.\n"
-            "graph: Specifies the name of the graph inside the database.\n"
-            "conn_url: Specifies the URL of the database connection.\n"
-            "auth: Specifies the authentication payload to be used for the database connection."
-        )
-        raise ValueError(msg)
+        resolved_key = self._resolve_key(key)
+        return self._data.get(resolved_key)
 
     def set(self, key: str, value: str) -> None:
-        if key in ALLOWED_CONFIG_KEYS:
-            self._data[key] = value
-        else:
-            msg = (
-                f"Invalid configuration key: {key}\n"
-                "Available configuration keys are:\n"
-                "backend: Specifies the backend to be used for storage (e.g., sqlite, postgresql, etc.).\n"
-                "name: Specifies the name of the repository/dataset.\n"
-                "graph: Specifies the name of the graph inside the database.\n"
-                "conn_url: Specifies the URL of the database connection.\n"
-                "auth: Specifies the authentication payload to be used for the database connection."
-            )
-            raise ValueError(msg)
+        resolved_key = self._resolve_key(key)
+        self._data[resolved_key] = value
+        if key not in self.KNOWN_CONFIG_KEYS:
+            warnings.warn(f"Unknown configuration key {key} will not be used.", stacklevel=2)
 
     def items(self) -> tuple[tuple[str, str], ...]:
         return tuple(sorted(self._data.items()))
@@ -79,3 +57,6 @@ class ConfigManager:
         with self.path.open("w", encoding="utf-8") as config_file:
             for key, value in self._data.items():
                 config_file.write(f"{key} = {json.dumps(value)}\n")
+
+    def _resolve_key(self, key: str) -> str:
+        return self._ALIASES.get(key, key)
