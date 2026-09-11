@@ -12,8 +12,8 @@ SHELL := bash
 .SHELLFLAGS := -eu -o pipefail -c
 empty :=
 
-IMPORT_CMD = spdx-storage import
-IMPORT_CMD = echo Importing file
+IMPORT_CMD = spdx-storage --config-file config.toml import
+# IMPORT_CMD = echo Importing file
 
 EX = spdx-examples
 VIZ = spdx-viz
@@ -99,7 +99,7 @@ import-lg: $(LGFILES)
 
 import-one-small: $(EXFILES)
 	@RANDOM_FILE=$$(echo "$^" | tr ' ' '\n' | shuf -n 1); \
-	echo "Importing at random small SBOM $$RANDOM_FILE";
+	echo "Importing at random small SBOM $$RANDOM_FILE"; \
 	$(IMPORT_CMD) $$RANDOM_FILE
 
 import-one-large: $(LGFILES)
