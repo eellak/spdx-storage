@@ -8,9 +8,11 @@ authors = [
 ]
 requires-python = ">=3.14"
 dependencies = [
+    "ijson>=3.5.1",
+    "orjson>=3.12.0",
     "platformdirs>=3.0.0",
     "rdflib>=7.6.0",
-    "triplestore",
+    "rdf-triplestore>=0.2.0",
 ]
 
 [project.scripts]
@@ -64,4 +66,11 @@ split-on-trailing-comma = false
 
 [tool.ruff.lint.mccabe]
 max-complexity = 12
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "rdf-triplestore[all]>=0.2.0",
+    "ruff>=0.16.6",
+]
 
