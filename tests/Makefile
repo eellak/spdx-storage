@@ -63,8 +63,6 @@ LGFILES = \
 	$(VIZ)/public/samples/linux/sbom-output.spdx.json \
 	$(VIZ)/public/samples/linux/sbom-source.spdx.json \
 	$(VIZ)/public/samples/paper-plane/paper-plane-supply-chain.spdx3.jsonld \
-	$(VIZ)/public/samples/samples.json \
-	$(VIZ)/public/samples/supply-chain/arborlink-sg1-supply-chain.spdx3.jsonld \
 	$(VIZ)/public/samples/trivy/trivy-ubuntu-26-bom.spdx3.json \
 	$(VIZ)/public/samples/vuejs/vuej-demo-sbom.spdx3.jsonld \
 	$(VIZ)/public/samples/windows/windows-11.spdx3.json \
@@ -89,7 +87,15 @@ all: input-files
 
 # tests to run
 
-import-all: import-ex import-lg
+import-all: $(EXFILES) $(LGFILES)
+	@while IFS=$$'\t' read -r size file; do \
+		echo "Importing $$file ($$size bytes)"; \
+		$(IMPORT_CMD) "$$file"; \
+	done < <( \
+		for file in $^; do \
+			printf '%s\t%s\n' "$$(stat -c '%s' "$$file")" "$$file"; \
+		done | LC_ALL=C sort -t $$'\t' -k1,1n -k2,2 \
+	)
 
 import-ex: $(EXFILES)
 	for f in $^; do $(IMPORT_CMD) $$f; done
