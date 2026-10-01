@@ -8,6 +8,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import ijson
+import orjson
 from rdflib import Graph
 from triplestore import Triplestore
 
@@ -16,6 +18,9 @@ from .config import ConfigManager
 
 if TYPE_CHECKING:
     import argparse
+
+JSON_OBJECT_BATCH_SIZE = 4_000
+TRIPLE_BATCH_SIZE = 50_000
 
 
 def add_import_parser(subparsers: argparse._SubParsersAction) -> None:
@@ -37,16 +42,7 @@ def do_import(input_file: str, config_file: str | None = None) -> int:
         msg = f"Configuration file does not exist or is not a file: {config_file}"
         raise FileNotFoundError(msg)
 
-    # Read/parse the SPDX input file into RDF data
-    input_format = detect_format(input_path)
-    data_graph = Graph()
-    try:
-        data_graph.parse(input_path, format=input_format)
-    except (ValueError, OSError) as exc:
-        msg = f"Failed to parse SPDX input file: {input_file}"
-        raise ValueError(msg) from exc
-
-    # Initialize a triplestore instance and import the RDF data
+    # Initialize a triplestore instance
     config = ConfigManager(config_path)
 
     triplestore_config = {}
@@ -56,7 +52,14 @@ def do_import(input_file: str, config_file: str | None = None) -> int:
             triplestore_config[config_key] = value
 
     store = Triplestore(config.get("backend"), config=triplestore_config)
-    store.add_all(data_graph)
+
+    # Read/parse the SPDX input file into RDF data and import the RDF data into the triplestore
+    input_format = detect_format(input_path)
+    try:
+        _import_data(input_path, input_format, store)
+    except (ValueError, OSError, ijson.JSONError, orjson.JSONEncodeError) as exc:
+        msg = f"Failed to parse SPDX input file: {input_file}"
+        raise ValueError(msg) from exc
 
     return 0
 
@@ -82,3 +85,54 @@ def detect_format(path: Path) -> str:
 
     msg = f"Unsupported input format: {path.suffix}"
     raise ValueError(msg)
+
+
+def _import_data(input_path: Path, input_format: str, store: Triplestore) -> None:
+    if input_format == "json-ld":
+        do_import_in_batches(input_path, store)
+        return
+
+    data_graph = Graph()
+    data_graph.parse(input_path, format=input_format)
+    store.add_all(data_graph)
+
+
+def do_import_in_batches(input_path: Path, store: Triplestore) -> None:
+    # Read the document context without loading the whole file.
+    with input_path.open("rb") as input_stream:
+        contexts = ijson.items(input_stream, "@context", use_float=True)
+        try:
+            context = next(contexts)
+        except StopIteration as exc:
+            msg = f"Missing @context in JSON-LD input: {input_path}"
+            raise ValueError(msg) from exc
+
+    json_objects: list[object] = []
+    triple_batch: list[tuple[object, object, object]] = []
+
+    def process_json_objects() -> None:
+        if not json_objects:
+            return
+
+        batch_graph = Graph()
+        jsonld_fragment = {"@context": context, "@graph": json_objects}
+
+        batch_graph.parse(data=orjson.dumps(jsonld_fragment), format="json-ld", publicID=input_path.resolve().as_uri())
+        json_objects.clear()
+
+        for triple in batch_graph:
+            triple_batch.append(triple)
+            if len(triple_batch) >= TRIPLE_BATCH_SIZE:
+                store.add_all(triple_batch)
+                triple_batch.clear()
+
+    with input_path.open("rb") as input_stream:
+        for json_object in ijson.items(input_stream, "@graph.item", use_float=True):
+            json_objects.append(json_object)
+            if len(json_objects) >= JSON_OBJECT_BATCH_SIZE:
+                process_json_objects()
+
+    # Parse the final JSON-object batch and import the final RDF batch
+    process_json_objects()
+    if triple_batch:
+        store.add_all(triple_batch)
