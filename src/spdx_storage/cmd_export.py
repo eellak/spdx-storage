@@ -52,20 +52,15 @@ def do_export(entity_id: str, config_file: str | None = None,
         raise FileNotFoundError(msg)
 
     # Initialize a triplestore instance
-    manager = ConfigManager(config_path)
+    config = ConfigManager(config_path)
 
     triplestore_config = {}
-    for config_key, store_key in (
-        ("name", "name"),
-        ("graph", "graph"),
-        ("conn_url", "base_url"),
-        ("auth", "auth"),
-    ):
-        value = manager.get(config_key)
+    for config_key in ("name", "graph", "conn_url", "auth"):
+        value = config.get(config_key)
         if value is not None:
-            triplestore_config[store_key] = value
+            triplestore_config[config_key] = value
 
-    store = Triplestore(manager.get("backend"), config=triplestore_config)
+    store = Triplestore(config.get("backend"), config=triplestore_config)
 
     # Check if the specified entity_id exists in the retrieved RDF data
     start_node = URIRef(entity_id)

@@ -12,8 +12,8 @@ SHELL := bash
 .SHELLFLAGS := -eu -o pipefail -c
 empty :=
 
-IMPORT_CMD = spdx-storage import
-IMPORT_CMD = echo Importing file
+IMPORT_CMD = spdx-storage --config-file config.toml import
+# IMPORT_CMD = echo Importing file
 
 EX = spdx-examples
 VIZ = spdx-viz
@@ -63,8 +63,6 @@ LGFILES = \
 	$(VIZ)/public/samples/linux/sbom-output.spdx.json \
 	$(VIZ)/public/samples/linux/sbom-source.spdx.json \
 	$(VIZ)/public/samples/paper-plane/paper-plane-supply-chain.spdx3.jsonld \
-	$(VIZ)/public/samples/samples.json \
-	$(VIZ)/public/samples/supply-chain/arborlink-sg1-supply-chain.spdx3.jsonld \
 	$(VIZ)/public/samples/trivy/trivy-ubuntu-26-bom.spdx3.json \
 	$(VIZ)/public/samples/vuejs/vuej-demo-sbom.spdx3.jsonld \
 	$(VIZ)/public/samples/windows/windows-11.spdx3.json \
@@ -89,7 +87,15 @@ all: input-files
 
 # tests to run
 
-import-all: import-ex import-lg
+import-all: $(EXFILES) $(LGFILES)
+	@while IFS=$$'\t' read -r size file; do \
+		echo "Importing $$file ($$size bytes)"; \
+		$(IMPORT_CMD) "$$file"; \
+	done < <( \
+		for file in $^; do \
+			printf '%s\t%s\n' "$$(stat -c '%s' "$$file")" "$$file"; \
+		done | LC_ALL=C sort -t $$'\t' -k1,1n -k2,2 \
+	)
 
 import-ex: $(EXFILES)
 	for f in $^; do $(IMPORT_CMD) $$f; done
@@ -99,7 +105,7 @@ import-lg: $(LGFILES)
 
 import-one-small: $(EXFILES)
 	@RANDOM_FILE=$$(echo "$^" | tr ' ' '\n' | shuf -n 1); \
-	echo "Importing at random small SBOM $$RANDOM_FILE";
+	echo "Importing at random small SBOM $$RANDOM_FILE"; \
 	$(IMPORT_CMD) $$RANDOM_FILE
 
 import-one-large: $(LGFILES)

@@ -1,0 +1,3 @@
+backend = "allegrograph"
+name = "spdx-storage"
+graph = "https://example.org/spdx-test"
