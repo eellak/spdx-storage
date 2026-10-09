@@ -46,7 +46,7 @@ class ConfigManager:
     def set(self, key: str, value: str) -> None:
         resolved_key = self._resolve_key(key)
         self._data[resolved_key] = value
-        if key not in self.KNOWN_CONFIG_KEYS:
+        if key not in self.KNOWN_CONFIG_KEYS and key not in self.ALIASES.values():
             warnings.warn(f"Unknown configuration key {key} will not be used.", stacklevel=2)
 
     def items(self) -> tuple[tuple[str, str], ...]:
