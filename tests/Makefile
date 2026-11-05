@@ -13,7 +13,9 @@ SHELL := bash
 empty :=
 
 IMPORT_CMD = spdx-storage import
+EXPORT_CMD = spdx-storage export
 IMPORT_CMD = echo Importing file
+EXPORT_CMD = echo Exporting id
 
 EX = spdx-examples
 VIZ = spdx-viz
@@ -99,13 +101,26 @@ import-lg: $(LGFILES)
 
 import-one-small: $(EXFILES)
 	@RANDOM_FILE=$$(echo "$^" | tr ' ' '\n' | shuf -n 1); \
-	echo "Importing at random small SBOM $$RANDOM_FILE";
+	echo "Importing at random small SBOM $$RANDOM_FILE"; \
 	$(IMPORT_CMD) $$RANDOM_FILE
 
 import-one-large: $(LGFILES)
 	@RANDOM_FILE=$$(echo "$^" | tr ' ' '\n' | shuf -n 1); \
 	echo "Importing at random large SBOM $$RANDOM_FILE"; \
 	$(IMPORT_CMD) $$RANDOM_FILE
+
+export-one-small: $(EXFILES)
+	@RANDOM_FILE=$$(echo "$^" | tr ' ' '\n' | shuf -n 1); \
+	TOPLEVEL=$$(jq '.["@graph"][] | select(.type == "SpdxDocument") | .spdxId' $$RANDOM_FILE); \
+	echo "Exporting at random small SBOM $$TOPLEVEL"; \
+	$(EXPORT_CMD) $$TOPLEVEL
+
+export-one-large: $(LGFILES)
+	@RANDOM_FILE=$$(echo "$^" | tr ' ' '\n' | shuf -n 1); \
+	TOPLEVEL=$$(jq '.["@graph"][] | select(.type == "SpdxDocument") | .spdxId' $$RANDOM_FILE); \
+	echo "Exporting at random small SBOM $$TOPLEVEL"; \
+	$(EXPORT_CMD) $$TOPLEVEL
+
 
 # cleaning up
 
